@@ -21,6 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdio.h>
 
 /* USER CODE END Includes */
 
@@ -59,7 +60,12 @@ static void MX_USART2_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+//TIM1を初期化
 MX_TIM1_Init();
+HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
 /* USER CODE END 0 */
 
 /**
@@ -99,8 +105,13 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  printf("init\n");
   while (1)
   {
+    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 25);
+    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 50);
+    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 75);
+    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 100);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -305,6 +316,11 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+int __io_putchar(int ch)
+{
+    HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+    return ch;
+}
 
 /* USER CODE END 4 */
 
