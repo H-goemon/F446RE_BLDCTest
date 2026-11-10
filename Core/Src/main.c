@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include <math.h>
+#include <sys/_intsup.h>
 
 /* USER CODE END Includes */
 
@@ -123,6 +124,13 @@ float calcInvClarke(float alpha, float beta, int phase) {
     return hoge;
 }
 
+// PWMデューティ比を計算する関数
+int calcDuty(float norCurr, int limitDuty, int maxDuty) {
+  float hoge = 0.5f * norCurr;
+  int pwm = (int)(hoge * limitDuty + maxDuty / 2.0f);
+  return pwm;
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -138,8 +146,7 @@ int main(void)
 
   /* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */  HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -176,6 +183,7 @@ int main(void)
     //　モーターに入力したい指令電流
     dCurr = 0.0f;  // d軸電流
     qCurr = 0.1f;  // q軸電流
+    
     if(nowDeg >= 360){
       nowDeg = 0;
     }else if(nowDeg < 0){
@@ -183,17 +191,28 @@ int main(void)
     }else{
       nowDeg += 1;
     }
+
     nowRad = (float)nowDeg * (float)M_PI / 180.0f;  // 現在の角度をラジアンに変換
     aCurr = calcInvParkA(dCurr, qCurr, nowRad);  // 逆パーク変換でα軸電流を計算
     bCurr = calcInvParkB(dCurr, qCurr, nowRad);  // 逆パーク変換でβ軸電流を計算
 
     for(int i=0; i<3; i++){
       norCurr[i] = calcInvClarke(aCurr, bCurr, i);  // 逆クラーク変換で各相電流を計算
+      outDuty[i] = calcDuty(norCurr[i], 90, 100);  // 各相の出力デューティ比を計算
+      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1 + i, outDuty[i]);  // PWMデューティ比を設定
     }
 
-    printf(">UCurr:%f\n", norCurr[0]);
-    printf(">VCurr:%f\n", norCurr[1]);
-    printf(">WCurr:%f\n", norCurr[2]);
+    /*
+    printf(">URawCurr:%f\n", norCurr[0]);
+    printf(">VRawCurr:%f\n", norCurr[1]);
+    printf(">WRawCurr:%f\n", norCurr[2]);
+
+    printf(">UDuty:%d\n", outDuty[0]);
+    printf(">VDuty:%d\n", outDuty[1]);
+    printf(">WDuty:%d\n", outDuty[2]);
+    */
+
+
 
     HAL_Delay(10);
 
