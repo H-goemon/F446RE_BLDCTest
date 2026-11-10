@@ -34,7 +34,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define M_PI 3.14159265358979323846f
 
 /* USER CODE END PD */
 
@@ -173,10 +172,10 @@ int main(void)
 
   //TIM1を初期化
   MX_TIM1_Init();
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);  //PA8 (D7)
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);  //PA9 (D8)
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);  //PA10 (D2)
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);  //PA11
 
   while (1)
   {
@@ -199,8 +198,12 @@ int main(void)
     for(int i=0; i<3; i++){
       norCurr[i] = calcInvClarke(aCurr, bCurr, i);  // 逆クラーク変換で各相電流を計算
       outDuty[i] = calcDuty(norCurr[i], 90, 100);  // 各相の出力デューティ比を計算
-      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1 + i, outDuty[i]);  // PWMデューティ比を設定
     }
+
+    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, outDuty[0]);  // PWMデューティ比を設定
+    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, outDuty[1]);  // PWMデューティ比を設定
+    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, outDuty[2]);  // PWMデューティ比を設定
+
 
     /*
     printf(">URawCurr:%f\n", norCurr[0]);
