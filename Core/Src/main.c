@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include <math.h>
 
 /* USER CODE END Includes */
 
@@ -32,6 +33,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define M_PI 3.14159265358979323846f
 
 /* USER CODE END PD */
 
@@ -60,6 +62,66 @@ static void MX_USART2_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+// モーター制御の変数を定義
+float dCurr = 0.0f;  // d軸電流
+float qCurr = 0.0f;  // q軸電流
+
+float aCurr = 0.0f;  // α軸電流
+float bCurr = 0.0f;  // β軸電流
+
+float uCurr = 0.0f;  // U相電流
+float vCurr = 0.0f;  // V相電流
+float wCurr = 0.0f;  // W相電流
+
+float norCurr[3] = {0.0f, 0.0f, 0.0f};  // 正規化された各相電流
+int outDuty[3] = {0, 0, 0};  // 各相の出力デューティ比
+
+int nowDeg = 0;
+float nowRad = 0.0f;  
+
+// モーター制御用のクラーク変換とパーク変換の関数を定義
+float calcClarkeA(float uCurr, float vCurr, float wCurr) {
+    float aCurr = 0.666667f * (uCurr - 0.5f * vCurr - 0.5f * wCurr);
+    return aCurr;
+}
+
+// クラーク変換（β軸成分）
+float calcClarkeB(float uCurr, float vCurr, float wCurr) {
+    float bCurr = 0.666667f * 0.866025f * (vCurr - wCurr);
+    return bCurr;
+}
+
+// パーク変換 (d軸成分)
+float calcParkD(float aCurr, float bCurr, float rad) {
+    float dCurr = cosf(rad) * aCurr + sinf(rad) * bCurr;
+    return dCurr;
+}
+
+// パーク変換 (q軸成分)
+float calcParkQ(float aCurr, float bCurr, float rad) {
+    float qCurr = -sinf(rad) * aCurr + cosf(rad) * bCurr;
+    return qCurr;
+}
+
+// 逆パーク変換 (α軸成分)
+float calcInvParkA(float dCurr, float qCurr, float rad) {
+    float aCurr = cosf(rad) * dCurr - sinf(rad) * qCurr;
+    return aCurr;
+}
+
+// 逆パーク変換 (β軸成分)
+float calcInvParkB(float dCurr, float qCurr, float rad) {
+    float bCurr = sinf(rad) * dCurr + cosf(rad) * qCurr;
+    return bCurr;
+}
+
+// 逆クラーク変換
+float calcInvClarke(float alpha, float beta, int phase) {
+    // phase → U:0, V:1, W:2
+    float angle = (2.0f * (float)M_PI * (float)phase) / 3.0f;
+    float hoge = alpha * cosf(angle) + beta * sinf(angle);
+    return hoge;
+}
 
 /* USER CODE END 0 */
 
@@ -111,10 +173,30 @@ int main(void)
 
   while (1)
   {
-    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 25);
-    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 50);
-    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 75);
-    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 100);
+    //　モーターに入力したい指令電流
+    dCurr = 0.0f;  // d軸電流
+    qCurr = 0.1f;  // q軸電流
+    if(nowDeg >= 360){
+      nowDeg = 0;
+    }else if(nowDeg < 0){
+      nowDeg = 360;
+    }else{
+      nowDeg += 1;
+    }
+    nowRad = (float)nowDeg * (float)M_PI / 180.0f;  // 現在の角度をラジアンに変換
+    aCurr = calcInvParkA(dCurr, qCurr, nowRad);  // 逆パーク変換でα軸電流を計算
+    bCurr = calcInvParkB(dCurr, qCurr, nowRad);  // 逆パーク変換でβ軸電流を計算
+
+    for(int i=0; i<3; i++){
+      norCurr[i] = calcInvClarke(aCurr, bCurr, i);  // 逆クラーク変換で各相電流を計算
+    }
+
+    printf(">UCurr:%f\n", norCurr[0]);
+    printf(">VCurr:%f\n", norCurr[1]);
+    printf(">WCurr:%f\n", norCurr[2]);
+
+    HAL_Delay(10);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -189,9 +271,9 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 0;
+  htim1.Init.Prescaler = 179;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 17999;
+  htim1.Init.Period = 99;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
