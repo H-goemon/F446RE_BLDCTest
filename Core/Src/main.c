@@ -60,12 +60,7 @@ static void MX_USART2_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-//TIM1を初期化
-MX_TIM1_Init();
-HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
-HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
+
 /* USER CODE END 0 */
 
 /**
@@ -106,6 +101,14 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   printf("init\n");
+
+  //TIM1を初期化
+  MX_TIM1_Init();
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
+
   while (1)
   {
     __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 25);
