@@ -73,11 +73,11 @@ float uCurr = 0.0f;  // U相電流
 float vCurr = 0.0f;  // V相電流
 float wCurr = 0.0f;  // W相電流
 
-float norCurr[3] = {0.0f, 0.0f, 0.0f};  // 正規化された各相電流
-int outDuty[3] = {0, 0, 0};  // 各相の出力デューティ比
+float norCurr[3] = {0.0f, 0.0f, 0.0f};  // 正規化された各相Duty指令値
+int outDuty[3] = {0, 0, 0};  // 各相の出力Duty指令値
 
-int nowDeg = 0;
-float nowRad = 0.0f;  
+int nowDeg = 0;  // 現在の角度（度数法）
+float nowRad = 0.0f;  // 現在の角度（ラジアン）
 
 // モーター制御用のクラーク変換とパーク変換の関数を定義
 float calcClarkeA(float uCurr, float vCurr, float wCurr) {
@@ -179,6 +179,11 @@ int main(void)
 
   while (1)
   {
+    /*
+    このプログラムではモーター指令電流を決め打ちしている。
+    実際は、センサーからの角度情報や速度情報をもとに、d軸電流とq軸電流を計算する必要がある。
+    またq軸電流を指令値、d軸電流を0にするPI制御を実装する必要がある。
+    */
     //　モーターに入力したい指令電流
     dCurr = 0.0f;  // d軸電流
     qCurr = 0.1f;  // q軸電流
