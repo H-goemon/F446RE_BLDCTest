@@ -168,7 +168,13 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  //　モーターに入力したい指令電流
+  dCurr = 0.05f;  // d軸電流
+  qCurr = 0.0f;  // q軸電流
+
   printf("init\n");
+  printf("dCurr:%f\n", dCurr);
+  printf("qCurr:%f\n", qCurr);
 
   //TIM1を初期化
   MX_TIM1_Init();
@@ -177,23 +183,40 @@ int main(void)
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);  //PA10 (D2)
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);  //PA11
 
+  // モーターの電気角を0°にする
+  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, 1);  // LED ON
+
+  aCurr = calcInvParkA(dCurr, qCurr, nowRad);  // 逆パーク変換でα軸電流を計算
+  bCurr = calcInvParkB(dCurr, qCurr, nowRad);  // 逆パーク変換でβ軸電流を計算
+
+  for(int i=0; i<3; i++){
+    norCurr[i] = calcInvClarke(aCurr, bCurr, i);  // 逆クラーク変換で各相電流を計算
+    outDuty[i] = calcDuty(norCurr[i], 90, 100);  // 各相の出力デューティ比を計算
+  }
+
+  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, outDuty[0]);  // PWMデューティ比を設定
+  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, outDuty[1]);  // PWMデューティ比を設定
+  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, outDuty[2]);  // PWMデューティ比を設定
+
+  HAL_Delay(1000);
+
   while (1)
   {
+    HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, 0);  // LED ON
     /*
     このプログラムではモーター指令電流を決め打ちしている。
     実際は、センサーからの角度情報や速度情報をもとに、d軸電流とq軸電流を計算する必要がある。
     またq軸電流を指令値、d軸電流を0にするPI制御を実装する必要がある。
     */
-    //　モーターに入力したい指令電流
-    dCurr = 0.0f;  // d軸電流
-    qCurr = 0.1f;  // q軸電流
+    dCurr = 0.0f;
+    qCurr = 0.05f;
     
     if(nowDeg >= 360){
       nowDeg = 0;
     }else if(nowDeg < 0){
       nowDeg = 360;
     }else{
-      nowDeg += 1;
+      nowDeg += 5;
     }
 
     nowRad = (float)nowDeg * (float)M_PI / 180.0f;  // 現在の角度をラジアンに変換
@@ -222,7 +245,8 @@ int main(void)
 
 
 
-    HAL_Delay(10);
+    HAL_Delay(1);
+    
 
     /* USER CODE END WHILE */
 
