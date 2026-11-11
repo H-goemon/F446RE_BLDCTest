@@ -78,6 +78,7 @@ int outDuty[3] = {0, 0, 0};  // 各相の出力Duty指令値
 
 int nowDeg = 0;  // 現在の角度（度数法）
 float nowRad = 0.0f;  // 現在の角度（ラジアン）
+int increment = 1;  // 角度の増分（度数法）
 
 // モーター制御用のクラーク変換とパーク変換の関数を定義
 float calcClarkeA(float uCurr, float vCurr, float wCurr) {
@@ -173,6 +174,7 @@ int main(void)
   qCurr = 0.0f;  // q軸電流
 
   printf("init\n");
+  printf("increment:%d\n", increment);
   printf("dCurr:%f\n", dCurr);
   printf("qCurr:%f\n", qCurr);
 
@@ -213,10 +215,12 @@ int main(void)
     
     if(nowDeg >= 360){
       nowDeg = 0;
+      HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, 1);  // LED ON
     }else if(nowDeg < 0){
       nowDeg = 360;
+      HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, 1);  // LED ON
     }else{
-      nowDeg += 5;
+      nowDeg += increment;  // 角度を増分
     }
 
     nowRad = (float)nowDeg * (float)M_PI / 180.0f;  // 現在の角度をラジアンに変換
